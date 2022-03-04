@@ -1,0 +1,5 @@
+# Need to ignore all build stuff as they are imported and built with CMAKE automatically
+build/
+
+# Ignores vscode prefs
+.vscode/
