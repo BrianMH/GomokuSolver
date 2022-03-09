@@ -48,3 +48,7 @@ add_executable(gomokuProject main.cpp ${SOURCES})
 add_executable(mnktester test/mnktest.cpp test/omoktest.cpp ${SOURCES})
 target_link_libraries(mnktester gtest_main)
 add_test(NAME example_test COMMAND mnktester)
+
+# Add main executable
+add_executable(mainOmokGame main.cpp ${SOURCES})
+target_link_libraries(mainOmokGame gtest_main)
