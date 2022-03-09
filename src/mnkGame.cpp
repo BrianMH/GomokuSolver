@@ -167,6 +167,9 @@ std::vector<std::tuple<int, MNKBoard::PieceDirection, std::tuple<int, int>, std:
     while(changedArray && minRowCnt <= winSize) {
         changedArray = false;
         for(auto& tup:winList) {
+            #ifdef MNK_VERBOSE
+            tuplePrinterHelper(tup);
+            #endif
             PieceDirection& curDir = std::get<1>(tup);
             auto& pieceL = std::get<2>(tup);
             auto& pieceR = std::get<3>(tup);
@@ -265,6 +268,20 @@ int MNKBoard::updateBSDPos(const CellState player, std::tuple<int, int>& pieceL,
 
     return extLen;
 }
+
+// helper function for a known tuple format
+#ifdef MNK_VERBOSE
+    void MNKBoard::tuplePrinterHelper(std::tuple<int, PieceDirection, std::tuple<int, int>, std::tuple<int, int>> tup) {
+            int inARowLen = std::get<0>(tup);
+            PieceDirection& curDir = std::get<1>(tup);
+            auto& pieceL = std::get<2>(tup);
+            auto& pieceR = std::get<3>(tup);
+
+            std::cout << "Updated tuple of length " << inARowLen << " located from loc (" << std::get<0>(pieceL) 
+                      << "," << std::get<1>(pieceL) << ") to loc (" << std::get<0>(pieceR) << "," 
+                      << std::get<1>(pieceR) << ")" << std::endl;
+    }
+#endif
 
 /**
  * Prints the game board with some formatting. For convenience, assume

@@ -2,6 +2,7 @@
 #include <utility>
 #include <tuple>
 #include <vector>
+#include <unordered_map>
 #include "gomoku.h"
 
 // initializes an omok game based on an mnk game
@@ -10,16 +11,27 @@ Omok::Omok():MNKBoard(BOARD_SIZE, BOARD_SIZE, KSIZE), curPlayer(CellState::black
 // overloads placePiece for the current game format
 bool Omok::placePiece(int row, int col) {
     // make sure you can place a pice in the first place
-    if(!isPosEmpty(row, col))
+    if(!isPosEmpty(row, col) || isFinished())
         return false;
 
     // check rules for potential placement of piece
-    bool res = isDoubleThree(row, col);
+    bool res;
+    if(gameStarted)
+        res = isDoubleThree(row, col);
+    else
+        gameStarted = true;
+        res = true;
 
     // place piece and toggle player for next move if possible
-    if(!res) {
+    if(res) {
         MNKBoard::placePiece(row, col, curPlayer);
-        curPlayer = curPlayer==CellState::black ? CellState::white : CellState::black;
+
+        // check for win condition following the piece placement
+        checkWin();
+
+        // if the win has yet to occur, then swap the player state
+        if(!gameFinished)
+            curPlayer = curPlayer==CellState::black ? CellState::white : CellState::black;
     }
 
     // return True if a piece was placed or false otherwise
@@ -40,10 +52,27 @@ bool Omok::isDoubleThree(int row, int col) {
     auto relColSec = getColVec(col);
     bool colO3 = openThreeCheck(std::vector<CellState>(relColSec.begin()+std::max(0,col-4),
                                     relColSec.begin()+std::min(BOARD_SIZE, col+4)));
+    
+    // diagonals require a bit more work to extract or desired portions
+    // We first: 1) Find the point in question amongst our array
     auto relFSDSec = getForwardDiagVec(row, col);
-    bool FSDO3 = false;
     auto relBSDSec = getBackDiagVec(row, col);
-    bool BSDO3 = false;
+    bool FSDO3, BSDO3;
+    std::vector<CellState> propVec;
+
+    if(relFSDSec.size() < O3CondsContainer::SIZE)
+        FSDO3 = false;
+    else { // find way to divy up the vector for the function here
+
+        FSDO3 = openThreeCheck(propVec);
+    }
+
+    if(relBSDSec.size() < O3CondsContainer::SIZE)
+        BSDO3 = false;
+    else {
+        
+        BSDO3 = openThreeCheck(propVec);
+    }
 
     // remove the piece after analysis
     MNKBoard::placePiece(row, col, CellState::none, false);
@@ -54,24 +83,25 @@ bool Omok::isDoubleThree(int row, int col) {
 // checks to see if one of the combinations is a open 3 sequence
 bool Omok::openThreeCheck(const std::vector<CellState>& pieceArr) {
     // trivially false if array not big enough to match sequence
-    if(pieceArr.size() < O3Conds::o3Cond1.size())
+    if(pieceArr.size() < O3CondsContainer::SIZE)
         return false;
 
     // pass through the current array and comb for possible sequences
-    for(int indOff=0; indOff <= pieceArr.size() - O3Conds::o3Cond1.size(); indOff++) {
+    for(int indOff=0; indOff <= pieceArr.size() - O3CondsContainer::SIZE; indOff++) {
         // possible o3 sequences
-        std::vector<std::vector<CellState>> o3PossConds = {O3Conds::o3Cond1, O3Conds::o3Cond2, 
-                                                            O3Conds::o3Cond3, O3Conds::o3Cond4};
+        std::vector<std::vector<CellState>> o3PossConds = {O3CondsContainer::o3Cond1(curPlayer), O3CondsContainer::o3Cond2(curPlayer), 
+                                                            O3CondsContainer::o3Cond3(curPlayer), O3CondsContainer::o3Cond4(curPlayer)};
         
         // proceed with checking + offset manipulation
         int arrInd = 0;
-        while(!o3PossConds.empty() && arrInd < O3Conds::o3Cond1.size()) {
+        while(!o3PossConds.empty() && arrInd < O3CondsContainer::SIZE) {
             for(auto o3it=o3PossConds.begin(); o3it != o3PossConds.end(); ++o3it) {
                 // if not equal, remove from possible sequence to limit the future checks
-                if((*o3it)[arrInd] != CellState::none)
-                    (*o3it)[arrInd] = curPlayer; // swap piece to correct color if different (maybe better sol?)
                 if((*o3it)[arrInd] != pieceArr[arrInd + indOff])
                     o3it = o3PossConds.erase(o3it);
+
+                if(o3it == o3PossConds.end())
+                    break;
             }
 
             // increase index of array being checked
@@ -88,19 +118,61 @@ bool Omok::openThreeCheck(const std::vector<CellState>& pieceArr) {
 }
 
 /**
+ * Caches results from the o3Cond func in order to prevent constant creation of the elements for any given player
+ **/
+std::vector<CellState>& Omok::O3CondsContainer::o3Cond1(CellState& player) {
+    if(!O3CondsContainer::cacheMap1.count(player))
+        O3CondsContainer::cacheMap1[player] = {CellState::none, CellState::none, player, 
+                                              player, player, CellState::none};
+    return O3CondsContainer::cacheMap1[player];
+}
+std::vector<CellState>& Omok::O3CondsContainer::o3Cond2(CellState& player) {
+    if(!O3CondsContainer::cacheMap2.count(player))
+        O3CondsContainer::cacheMap2[player] = {CellState::none, player, player, 
+                                                player, CellState::none, CellState::none};
+    return O3CondsContainer::cacheMap2[player];
+}
+std::vector<CellState>& Omok::O3CondsContainer::o3Cond3(CellState& player) {
+    if(!O3CondsContainer::cacheMap3.count(player))
+        O3CondsContainer::cacheMap3[player] = {CellState::none, player, CellState::none, 
+                                               player, player, CellState::none};
+    return O3CondsContainer::cacheMap3[player];
+}
+std::vector<CellState>& Omok::O3CondsContainer::o3Cond4(CellState& player) {
+    if(!O3CondsContainer::cacheMap4.count(player))
+        O3CondsContainer::cacheMap4[player] = {CellState::none, player, player, 
+                                               CellState::none, player, CellState::none};
+    return O3CondsContainer::cacheMap4[player];
+}
+
+/**
+ *  Just used to keep track of the status of the game
+ * */
+bool Omok::isFinished(void) {
+    return gameFinished;
+}
+
+/**
  * A win could only arise depending on the last placed piece.
  * The area to check will only be the 2k x 2k window about the piece
  * 
  * Note: this function ignores overlines
  **/
-bool Omok::checkWin(void) {
+void Omok::checkWin(void) {
     auto winList = enumerateInARow();
 
     // now iterate once to find possible winning direction
-    for(auto& tup:winList) 
-        if(std::get<0>(tup) == winSize)
-            return true;
+    for(auto& tup:winList) {
+        #ifdef OMOK_VERBOSE
+        std::cout << std::get<0>(tup) << " ";
+        #endif
 
-    return false;
+        if(std::get<0>(tup) == winSize)
+            gameFinished = true;
+    }
+
+    #ifdef OMOK_VERBOSE
+    std::cout << std::endl;
+    #endif
 }
 

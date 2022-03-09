@@ -8,7 +8,7 @@
 #include <tuple>
 
 // VERBOSE OUTPUT
-#define MNK_VERBOSE
+// #define MNK_VERBOSE
 
 /**
  * MNKBoard
@@ -23,6 +23,14 @@ enum class CellState: char{
     none,   // only used for initialization of the board
     black,
     white
+};
+
+// Hashing class for the CellState class (more generally for enum classes)
+struct EnumClassHash {
+    template <typename T>
+    std::size_t operator()(T t) const {
+        return static_cast<std::size_t>(t);
+    }
 };
 
 class MNKBoard{
@@ -64,6 +72,11 @@ protected:
     // queries a particular directional diagonal given a point's placement
     const std::vector<CellState> getForwardDiagVec(int pieceRow, int pieceCol); // (/)-directional
     const std::vector<CellState> getBackDiagVec(int pieceRow, int pieceCol); // (\)-directional
+
+    // helps prints tuples for feedback
+    #ifdef MNK_VERBOSE
+    void tuplePrinterHelper(std::tuple<int, PieceDirection, std::tuple<int, int>, std::tuple<int, int>>);
+    #endif
 
 public:
     // Init m x n game of k in a row

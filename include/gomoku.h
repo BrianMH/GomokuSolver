@@ -3,7 +3,11 @@
 
 // Required imports
 #include <utility>
+#include <unordered_map>
 #include "mnkGame.h"
+
+// verbose output
+// #define OMOK_VERBOSE
 
 /**
  *  Omok
@@ -16,9 +20,11 @@
  **/
 class Omok: public MNKBoard{
 private:
-    static const int BOARD_SIZE = 15;
-    static const int KSIZE = 5;
+    inline static const int BOARD_SIZE = 15;
+    inline static const int KSIZE = 5;
     CellState curPlayer;
+    bool gameFinished = false;
+    bool gameStarted = false;
 
 public:
     // inits omok board
@@ -28,28 +34,36 @@ public:
     // CellState should only be modified for testing
     bool placePiece(int row, int col);
 
-    // modified win detection
-    bool checkWin(void);
+    // used to determine when the game has finished
+    bool isFinished(void);
 
 private:
     // enumerate possible open 3 conditions
-    class O3Conds {
-    public:
-        static const inline std::vector<CellState> o3Cond1 = {CellState::none, CellState::none, CellState::black, 
-                                                                CellState::black, CellState::black, CellState::none};
-        static const inline std::vector<CellState> o3Cond2 = {CellState::none, CellState::black, CellState::black, 
-                                                                CellState::black, CellState::none, CellState::none};
-        static const inline std::vector<CellState> o3Cond3 = {CellState::none, CellState::black, CellState::none, 
-                                                                CellState::black, CellState::black, CellState::none};
-        static const inline std::vector<CellState> o3Cond4 = {CellState::none, CellState::black, CellState::black, 
-                                                                CellState::none, CellState::black, CellState::none};
+    class O3CondsContainer {
+        public:
+        inline static const int SIZE = 6;
+        static std::vector<CellState>& o3Cond1(CellState& player);
+        static std::vector<CellState>& o3Cond2(CellState& player);
+        static std::vector<CellState>& o3Cond3(CellState& player);
+        static std::vector<CellState>& o3Cond4(CellState& player);
+
+        private:
+        static inline std::unordered_map<CellState, std::vector<CellState>, EnumClassHash> cacheMap1;
+        static inline std::unordered_map<CellState, std::vector<CellState>, EnumClassHash> cacheMap2;
+        static inline std::unordered_map<CellState, std::vector<CellState>, EnumClassHash> cacheMap3;
+        static inline std::unordered_map<CellState, std::vector<CellState>, EnumClassHash> cacheMap4;
     };
+
+    O3CondsContainer returnPlayerSpecificConds(const CellState& player);
 
     // checks whether a 3-in-a-row sequence is an open three
     bool openThreeCheck(const std::vector<CellState>& pieceArr);
 
     // helper function for 3n3 rule
     bool isDoubleThree(int row, int col);
+
+    // modified win detection
+    void checkWin(void);
 };
 
 #endif
