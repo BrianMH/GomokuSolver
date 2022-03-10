@@ -70,8 +70,9 @@ protected:
     const std::vector<CellState> getColVec(int colInd);
 
     // queries a particular directional diagonal given a point's placement
-    const std::vector<CellState> getForwardDiagVec(int pieceRow, int pieceCol); // (/)-directional
-    const std::vector<CellState> getBackDiagVec(int pieceRow, int pieceCol); // (\)-directional
+    const std::vector<CellState> getForwardDiagVec(int pieceRow, int pieceCol, int windowSize = 0); // (/)-directional
+    const std::vector<CellState> getBackDiagVec(int pieceRow, int pieceCol, int windowSize = 0); // (\)-directional
+    void vectorBuilderHelper(std::vector<CellState>& toModify, int windowSize, int row, int col, int deltaY, int deltaX);
 
     // helps prints tuples for feedback
     #ifdef MNK_VERBOSE
@@ -91,6 +92,7 @@ public:
     // movements values (usually changed by game basis)
     // returns true if the piece was placed succesfully, otherwise false.
     virtual bool placePiece(int row, int col, CellState state, bool updateLast = true);
+    void removePiece(int row, int col);
 
     // clears the board entirely
     void clearBoard(void);

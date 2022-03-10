@@ -15,15 +15,16 @@ bool Omok::placePiece(int row, int col) {
         return false;
 
     // check rules for potential placement of piece
-    bool res;
-    if(gameStarted)
-        res = isDoubleThree(row, col);
-    else
+    bool d3Present;
+    if(gameStarted) {
+        d3Present = isDoubleThree(row, col);
+    } else {
         gameStarted = true;
-        res = true;
+        d3Present = false;
+    }
 
     // place piece and toggle player for next move if possible
-    if(res) {
+    if(!d3Present) {
         MNKBoard::placePiece(row, col, curPlayer);
 
         // check for win condition following the piece placement
@@ -35,7 +36,7 @@ bool Omok::placePiece(int row, int col) {
     }
 
     // return True if a piece was placed or false otherwise
-    return res;
+    return !d3Present;
 }
 
 // checks to see if the current move produces a 3n3 sequence
@@ -48,36 +49,22 @@ bool Omok::isDoubleThree(int row, int col) {
     // it's state as a potential "open three"
     auto relRowSec = getRowVec(row);
     bool rowO3 = openThreeCheck(std::vector<CellState>(relRowSec.begin()+std::max(0,row-4),
-                                    relRowSec.begin()+std::min(BOARD_SIZE, row+4)));
+                                    relRowSec.begin()+std::min(BOARD_SIZE-1, row+4)));
     auto relColSec = getColVec(col);
     bool colO3 = openThreeCheck(std::vector<CellState>(relColSec.begin()+std::max(0,col-4),
-                                    relColSec.begin()+std::min(BOARD_SIZE, col+4)));
+                                    relColSec.begin()+std::min(BOARD_SIZE-1, col+4)));
     
-    // diagonals require a bit more work to extract or desired portions
-    // We first: 1) Find the point in question amongst our array
-    auto relFSDSec = getForwardDiagVec(row, col);
-    auto relBSDSec = getBackDiagVec(row, col);
-    bool FSDO3, BSDO3;
-    std::vector<CellState> propVec;
-
-    if(relFSDSec.size() < O3CondsContainer::SIZE)
-        FSDO3 = false;
-    else { // find way to divy up the vector for the function here
-
-        FSDO3 = openThreeCheck(propVec);
-    }
-
-    if(relBSDSec.size() < O3CondsContainer::SIZE)
-        BSDO3 = false;
-    else {
-        
-        BSDO3 = openThreeCheck(propVec);
-    }
-
+    // diagonals require a bit more work to extract or desired portions as they aren't stored
+    // in bitmap arrays to make this easier
+    auto relFSDSec = getForwardDiagVec(row, col, 4);
+    auto relBSDSec = getBackDiagVec(row, col, 4);
+    bool FSDO3 = openThreeCheck(relFSDSec);
+    bool BSDO3 = openThreeCheck(relBSDSec);
+    
     // remove the piece after analysis
-    MNKBoard::placePiece(row, col, CellState::none, false);
+    MNKBoard::removePiece(row, col);
 
-    return (rowO3?1:0 + colO3?1:0 + FSDO3?1:0 + BSDO3?1:0) > 2;
+    return ((rowO3?1:0) + (colO3?1:0) + (FSDO3?1:0) + (BSDO3?1:0)) >= 2;
 }
 
 // checks to see if one of the combinations is a open 3 sequence
@@ -95,13 +82,12 @@ bool Omok::openThreeCheck(const std::vector<CellState>& pieceArr) {
         // proceed with checking + offset manipulation
         int arrInd = 0;
         while(!o3PossConds.empty() && arrInd < O3CondsContainer::SIZE) {
-            for(auto o3it=o3PossConds.begin(); o3it != o3PossConds.end(); ++o3it) {
+            for(auto o3it=o3PossConds.begin(); o3it != o3PossConds.end();) {
                 // if not equal, remove from possible sequence to limit the future checks
                 if((*o3it)[arrInd] != pieceArr[arrInd + indOff])
                     o3it = o3PossConds.erase(o3it);
-
-                if(o3it == o3PossConds.end())
-                    break;
+                else
+                    ++o3it;
             }
 
             // increase index of array being checked

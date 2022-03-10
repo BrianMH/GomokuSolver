@@ -55,6 +55,13 @@ bool MNKBoard::placePiece(int row, int col, CellState state, bool updateLast) {
 }
 
 /**
+ * Helper only used for testing piece placements
+ * */
+void MNKBoard::removePiece(int row, int col) {
+    board[row][col] = CellState::none;
+}
+
+/**
  * A win could only arise depending on the last placed piece.
  * The area to check will only be the 2k x 2k window about the piece
  * 
@@ -114,18 +121,26 @@ const std::vector<CellState> MNKBoard::getColVec(int colInd) {
 
 /**
  *  Slices the board to isolate a (/)-directional diagonal given a particular index.
+ * 
+ *  Use the window size argument to acquire only a windowed look into the diagonal
  **/ 
-const std::vector<CellState> MNKBoard::getForwardDiagVec(int pieceRow, int pieceCol) {
+const std::vector<CellState> MNKBoard::getForwardDiagVec(int pieceRow, int pieceCol, int windowSize) {
     auto tempVec = std::vector<CellState>();
 
-    // adjust offset to begin from most bottom-left element we can find
-    int deltaVal = std::min((int)numRows-pieceRow, pieceCol);
-    pieceRow += deltaVal; pieceCol -= deltaVal;
+    if(windowSize == 0) {
+        // adjust offset to begin from most bottom-left element we can find
+        int deltaVal = std::min((int)numRows-pieceRow, pieceCol);
+        pieceRow += deltaVal; pieceCol -= deltaVal;
 
-    // Add elements to vector as we go starting from bottom left position
-    while(pieceRow < numRows && pieceCol < numCols) {
+        // Add elements to vector as we go starting from bottom left position
+        while(pieceRow < numRows && pieceCol < numCols) {
+            tempVec.push_back(board[pieceRow][pieceCol]);
+            pieceRow -= 1; pieceCol += 1;
+        }
+    } else { // need to find vector windowSize elems left and right of cur elem and simply construct a small vec
         tempVec.push_back(board[pieceRow][pieceCol]);
-        pieceRow -= 1; pieceCol += 1;
+        vectorBuilderHelper(tempVec, windowSize, pieceRow, pieceCol, 1, -1);
+        vectorBuilderHelper(tempVec, windowSize, pieceRow, pieceCol, -1, 1);
     }
 
     return tempVec;
@@ -134,19 +149,48 @@ const std::vector<CellState> MNKBoard::getForwardDiagVec(int pieceRow, int piece
 /**
  *  Slices the board to isolate a (\)-directional diagonal given a particular index.
  *  This is simple as any upper left element is guaranteed to exist if a lower-right element exists.
+ * 
+ *  A subslice can be acquired by specifying the window size argument.
  **/ 
-const std::vector<CellState> MNKBoard::getBackDiagVec(int pieceRow, int pieceCol) {
+const std::vector<CellState> MNKBoard::getBackDiagVec(int pieceRow, int pieceCol, int windowSize) {
     // Add elements to vector as we go starting from top left position
     auto tempVec = std::vector<CellState>();
-    int deltaVal = std::min(pieceRow, pieceCol);
-    pieceRow -= deltaVal; pieceCol -= deltaVal;
 
-    while(pieceRow < numRows && pieceCol < numCols) {
+    if(windowSize == 0) {
+        int deltaVal = std::min(pieceRow, pieceCol);
+        pieceRow -= deltaVal; pieceCol -= deltaVal;
+
+        while(pieceRow < numRows && pieceCol < numCols) {
+            tempVec.push_back(board[pieceRow][pieceCol]);
+            pieceRow += 1; pieceCol += 1;
+        }
+    } else {
         tempVec.push_back(board[pieceRow][pieceCol]);
-        pieceRow += 1; pieceCol += 1;
+        vectorBuilderHelper(tempVec, windowSize, pieceRow, pieceCol, -1, -1);
+        vectorBuilderHelper(tempVec, windowSize, pieceRow, pieceCol, 1, 1);
     }
 
     return tempVec;
+}
+
+/**
+ * Recursive helper that populates a vector with the proper elements either in the beginning or at the end...
+ * */ 
+void MNKBoard::vectorBuilderHelper(std::vector<CellState>& toModify, int windowSize, int row, int col, int deltaY, int deltaX) {
+    // edge cases (ie. no need to go farther or edges of matrix reached)
+    if(windowSize <= 0 || (row == 0 && deltaY < 0) || (row == numRows-1 && deltaY > 0) 
+                       || (col == 0 && deltaX < 0) || (row == numCols-1 && deltaX > 0))
+        return;
+    
+    // Since our vector always goes from left -> right. A negative deltaX implies a prepend and a positive deltaX
+    // implies an append...
+    if(deltaX < 0)
+        toModify.emplace(toModify.begin(), board[row+deltaY][col+deltaX]);
+    else
+        toModify.emplace_back(board[row+deltaY][col+deltaX]);
+
+    // recurse with smaller window size
+    vectorBuilderHelper(toModify, windowSize-1, row+deltaY, col+deltaX, deltaY, deltaX);
 }
 
 /**
