@@ -68,6 +68,10 @@ void MNKBoard::removePiece(int row, int col) {
  * Note: this function accepts overlines
  **/
 bool MNKBoard::checkWin(void) {
+    // edge quick eval case: no move has been made yet (=> no winner)
+    if(board[std::get<0>(lastMove)][std::get<1>(lastMove)] == CellState::none)
+        return false;
+
     auto winList = enumerateInARow();
 
     // now iterate once to find possible winning direction

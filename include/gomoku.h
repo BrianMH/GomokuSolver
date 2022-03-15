@@ -40,6 +40,9 @@ public:
     // reports the value of the player who won the game (0 if nobody has won yet)
     int getGameWinner(void);
 
+    // clears the game board
+    void clearBoard(void);
+
 private:
     // enumerate possible open 3 conditions
     class O3CondsContainer {

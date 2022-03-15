@@ -137,7 +137,3 @@ TEST_F(MNKGameTest, Randomized5x5WinTest) {
         numIters++;
     }
 }
-
-TEST_F(MNKGameTest, RowVecRetTest) {
-    // tests the return row vec function
-}

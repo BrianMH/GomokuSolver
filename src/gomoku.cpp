@@ -47,6 +47,14 @@ int Omok::getGameWinner(void) {
         return 0;
 }
 
+// clears the game board and resets state variables to their inits
+void Omok::clearBoard(void) {
+    MNKBoard::clearBoard();
+    gameFinished = false;
+    gameStarted = false;
+    curPlayer = CellState::black;
+}
+
 // checks to see if the current move produces a 3n3 sequence
 bool Omok::isDoubleThree(int row, int col) {
     // Hypothetically place the move without restriction

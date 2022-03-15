@@ -18,7 +18,7 @@ int main(void) {
         std::cout << "Placing a piece at (" << newX << "," << newY << ")..." << std::endl;
 
         // Place piece into game (or keep asking for new coords until it can happen)
-        res = game.placePiece(newX, newY);
+        res = game.placePiece(newX-1, newY-1);
         while(!res) {
             std::cout << "Invalid play made... Give corrected location (ie. 1 2): \t";  // Perhaps error reporting could be better in the API?
             std::cin >> newX;
@@ -29,6 +29,8 @@ int main(void) {
         std::cout << "Is game finished? " << game.isFinished() << std::endl;
     }
 
+    std::cout << "Final Board... Winner is Player " << game.getGameWinner() << "!" << std::endl;
+    std::cout << game << std::endl;
     std::cout << "Game has finished..." << std::endl;
     return 0;
 }
