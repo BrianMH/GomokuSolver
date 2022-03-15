@@ -39,6 +39,14 @@ bool Omok::placePiece(int row, int col) {
     return !d3Present;
 }
 
+// reports the winner based on the value of the player
+int Omok::getGameWinner(void) {
+    if(gameFinished)
+        return curPlayer==CellState::black ? 1 : 2;
+    else
+        return 0;
+}
+
 // checks to see if the current move produces a 3n3 sequence
 bool Omok::isDoubleThree(int row, int col) {
     // Hypothetically place the move without restriction

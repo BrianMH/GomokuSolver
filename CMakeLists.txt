@@ -40,15 +40,21 @@ endif()
 # Include the current directory project files as well
 include_directories("include")
 
-# Create the default project 
+# Globs necessary files into source variable
 file(GLOB SOURCES "src/*.cpp")
-add_executable(gomokuProject main.cpp ${SOURCES})
 
 # Now simply link against gtest or gtest_main as needed. Eg
+project(mnktester)
 add_executable(mnktester test/mnktest.cpp test/omoktest.cpp ${SOURCES})
+set_target_properties(mnktester
+    PROPERTIES
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED YES
+        CXX_EXTENSIONS NO
+)
 target_link_libraries(mnktester gtest_main)
-add_test(NAME example_test COMMAND mnktester)
+target_link_libraries(mnktester stdc++fs)
 
 # Add main executable
+project(mainOmokGame)
 add_executable(mainOmokGame main.cpp ${SOURCES})
-target_link_libraries(mainOmokGame gtest_main)

@@ -37,6 +37,9 @@ public:
     // used to determine when the game has finished
     bool isFinished(void);
 
+    // reports the value of the player who won the game (0 if nobody has won yet)
+    int getGameWinner(void);
+
 private:
     // enumerate possible open 3 conditions
     class O3CondsContainer {

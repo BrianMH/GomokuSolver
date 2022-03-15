@@ -23,7 +23,7 @@ int main(void) {
             std::cout << "Invalid play made... Give corrected location (ie. 1 2): \t";  // Perhaps error reporting could be better in the API?
             std::cin >> newX;
             std::cin >> newY;
-            res = game.placePiece(newX, newY);
+            res = game.placePiece(newX-1, newY-1);
         }
 
         std::cout << "Is game finished? " << game.isFinished() << std::endl;
